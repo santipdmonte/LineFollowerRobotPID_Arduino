@@ -1,7 +1,5 @@
 /*
 
-TODO: adaptar motores e inizializacion
-
 Robot Sigue Linea:
   - Espera 2 segundos
   - Inicializa con una calibracion, girando 360 para determinar valores maximos, minimos y punto medio
@@ -14,8 +12,6 @@ Tener en cuenta:
   - Cuanto mas blanco mayor el error
 
 */
-
-// #include <SparkFun_TB6612.h>  // VERRRR si corresponde ************************************************************
 
 // Pin definitions
   //Motores
@@ -40,21 +36,18 @@ const int irSensor[3] = {irDerecha, irCentro, irIzquierda};
 // === Inicializacion de variables ==============================================================
 int P, D, I = 0, previousError = 0, PIDvalue, error;
 int lsp, rsp;
-int baseSpeed = 225;
+int baseSpeed = 200;
 
 float Kp = 0; // Inicializadas en cero por si son comentadas mas adelante tome este valor y no de error
 float Kd = 0;
 float Ki = 0;
 
-int minValues[3], maxValues[3], threshold[3]; // Variables para calibrar los colores y establece el valor minimo y maximo
-
-int ref; 
-int refIzq, refDer, refCen; // BORRAR
+int ref; // Para la funcion leer_sensor
 
 
 // === Setup ====================================================================================
 void setup(){ 
-  
+
   // Additional setup from your original code
   pinMode(13, OUTPUT);  // ledTest
   digitalWrite(13, LOW);
@@ -96,65 +89,21 @@ void setup(){
 // === Loop ====================================================================================
 void loop(){
 
-  // Prueba de motores - BORRAR
-  // analogWrite(AIA, 0);
-  // analogWrite(AIB, 255);
-  // analogWrite(BIA, 255);
-  // analogWrite(BIB, 0);
-
-  // Prueba Sensores - BORRAR
-  // // digitalWrite(ledTest, HIGH);
-  // // digitalWrite(irIzquierda, HIGH);
-  // // digitalWrite(irDerecha, HIGH);
-  // // digitalWrite(irCentro, HIGH);
-  // // refIzq = analogRead(sensorPins[2]);
-  // // refDer = analogRead(sensorPins[0]);
-  // // refCen = analogRead(sensorPins[1]);
-  // // digitalWrite(irIzquierda, LOW);
-  // // digitalWrite(irDerecha, LOW);
-  // // digitalWrite(irCentro, LOW);
-  // // digitalWrite(ledTest, LOW);
-
-  // refIzq = leer_sensor(2);
-  // refDer = leer_sensor(0);
-  // refCen = leer_sensor(1);
-  
-  // Serial.print(refIzq);
-  // Serial.print(",");
-  // Serial.print(refCen);
-  // Serial.print(",");
-  // Serial.println(refDer);
-
-
-
-
-  // while (digitalRead(11)) {} // Boton
-  delay(2000);
-  calibrate();
-  // while (digitalRead(12)) {} // Boton
-  delay(3000);
-
-  
-
-  Serial.println("FIN"); // BORAR
-
-  imprimir_valores_sensores();
-
-
-  while (1){ // Este while es necesario si realizamos la calibracion
     
-    if (leer_sensor(1) > threshold[1]){
+  if (leer_sensor(1) > 500){
+    
+    // MODIFICAR hasta encontrar valores optimos. Buscar Kp optimo, luego Kd y luego Ki
+    /* Otra forma de hacerlo es establecer valores fijos en la declaracion de variables */
+    Kp = 0.0008 * (1000 - leer_sensor(1)); // Si esta centrado, kp sera casi 0
+    Kd = 10 * Kp;
+    Ki = 0.0001;
+    
+    linefollow();
       
-      // MODIFICAR hasta encontrar valores optimos. Buscar Kp optimo, luego Kd y luego Ki
-      /* Otra forma de hacerlo es establecer valores fijos en la declaracion de variables */
-      Kp = 0.0006 * (1000 - leer_sensor(1)); // Si esta centrado, kp sera casi 0
-      //Kd = 10 * Kp;
-      //Ki = 0.0001;
-      
-      linefollow();
-        
-    }
+  } else {
+    parar();
   }
+  
 }
 
 //  === LineFollowFunction =======================================================================================
@@ -178,14 +127,14 @@ void linefollow(){
   if (lsp > 255) {
     lsp = 255;
   }
-  if (lsp < 200) {
-    lsp = 200;
+  if (lsp < 0) {
+    lsp = 0;
   }
   if (rsp > 255) {
     rsp = 255;
   }
-  if (rsp < 200) {
-    rsp = 200;
+  if (rsp < 0) {
+    rsp = 0;
   }
 
   // Asignamos velocidad a los motores
@@ -194,53 +143,6 @@ void linefollow(){
 
 }
 
-//  === CalibrateFunction =======================================================================================
-void calibrate()
-{
-
-  for ( int i = 0; i < 3; i++)  // Inicializamos las variables 
-  {
-    Serial.println("Inicializando Variables"); // BORAR
-    minValues[i] = analogRead(sensorPins[i]);
-    maxValues[i] = analogRead(sensorPins[i]);
-  }
-  
-  for (int i = 0; i < 600; i++)  // Gira 360 para guardar valores maximos y minimos de la superficie
-  {
-    Serial.println("GIRANDO"); // BORAR
-    // Giro 360 
-    analogWrite(AIB, 200); // Motor A hacia ADELANTE vel.50
-    analogWrite(BIB, 200); // Motor B hacia ATRAS vel.50
-
-    for ( int i = 0; i < 3; i++) 
-    {
-      if (leer_sensor(i) < minValues[i])
-      {
-        minValues[i] = leer_sensor(i);
-      }
-      if (leer_sensor(i) > maxValues[i])
-      {
-        maxValues[i] = leer_sensor(i);
-      }
-    }
-  }
-
-  for ( int i = 0; i < 3; i++) // Asigna el valor medio de cada sensor
-  {
-    Serial.println("Asignando Valores"); // BORAR
-    threshold[i] = (minValues[i] + maxValues[i]) / 2;
-    Serial.print(threshold[i]);
-    Serial.print("   ");
-  }
-  Serial.println();
-  
-  // Parar
-  Serial.println("PARAR"); // BORAR
-  analogWrite(AIA, 0);
-  analogWrite(AIB, 0);
-  analogWrite(BIA, 0);
-  analogWrite(BIB, 0);
-}
 
 //  === Leer Sensor =======================================================================================
 int leer_sensor(int i){
@@ -272,5 +174,14 @@ void imprimir_valores_sensores(){
   Serial.print(threshold[2]);
   Serial.print(" ");
   Serial.println(maxValues[2]);
+}
+
+
+void parar(){
+  Serial.println("PARAR");
+  analogWrite(AIA, 0);
+  analogWrite(AIB, 0);
+  analogWrite(BIA, 0);
+  analogWrite(BIB, 0);
 }
 
