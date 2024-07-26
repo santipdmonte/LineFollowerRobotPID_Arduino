@@ -1,9 +1,6 @@
 /*
 
 Robot Sigue Linea:
-  - Espera 2 segundos
-  - Inicializa con una calibracion, girando 360 para determinar valores maximos, minimos y punto medio
-  - Espera 3 segundos, y comienza el loop
   - En base al error de los sensores externos establece los valores del PID 
   - En base a los valores del PID establece cuanto gira cada motor
 
@@ -12,6 +9,18 @@ Tener en cuenta:
   - Cuanto mas blanco mayor el error
 
 */
+
+// === Establecemos Velocidades
+int baseSpeed = 200;
+int maxSpeed = 255;
+int minSpeed = 75;
+
+// FineTuning del PID
+float Kp2 = 0.0008; //Kp = Kp2 * (1000 - leer_sensor(1));
+float Kd2 = 0.1; //Kd = Kd2 * Kp;
+float Ki2 = 0.0001; // Ki = Ki2
+
+// === Desde aca es todo codigo, no se deberia tener que modificar nada ==========================
 
 // Pin definitions
   //Motores
@@ -36,7 +45,6 @@ const int irSensor[3] = {irDerecha, irCentro, irIzquierda};
 // === Inicializacion de variables ==============================================================
 int P, D, I = 0, previousError = 0, PIDvalue, error;
 int lsp, rsp;
-int baseSpeed = 200;
 
 float Kp = 0; // Inicializadas en cero por si son comentadas mas adelante tome este valor y no de error
 float Kd = 0;
@@ -48,7 +56,6 @@ int ref; // Para la funcion leer_sensor
 // === Setup ====================================================================================
 void setup(){ 
 
-  // Additional setup from your original code
   pinMode(13, OUTPUT);  // ledTest
   digitalWrite(13, LOW);
 
@@ -82,27 +89,22 @@ void setup(){
   digitalWrite(ledTest, LOW);
   delay(500);
 
-  Serial.begin(9600); // -> Antes estaba solo esto
+  Serial.begin(9600);
 }
 
 
 // === Loop ====================================================================================
 void loop(){
 
+  if (leer_sensor(1) > 450){ // Si el sensor del medio es mayor a 450(Negro)
     
-  if (leer_sensor(1) > 500){
-    
-    // MODIFICAR hasta encontrar valores optimos. Buscar Kp optimo, luego Kd y luego Ki
     /* Otra forma de hacerlo es establecer valores fijos en la declaracion de variables */
-    Kp = 0.0008 * (1000 - leer_sensor(1)); // Si esta centrado, kp sera casi 0
-    Kd = 10 * Kp;
-    Ki = 0.0001;
+    Kp = Kp2 * (1000 - leer_sensor(1)); // Si esta centrado, kp sera casi 0
+    Kd = Kd2 * Kp;
+    Ki = Ki2;
     
     linefollow();
-      
-  } else {
-    parar();
-  }
+  } 
   
 }
 
@@ -111,7 +113,7 @@ void linefollow(){
 
   int error = ((leer_sensor(2)) - leer_sensor(0));
       
-  // Calculo valores segun el errror
+  // Calculo valores segun el error
   P = error;
   I = I + error;
   D = error - previousError;
@@ -124,17 +126,17 @@ void linefollow(){
   rsp = baseSpeed + PIDvalue;
 
   // Establece valores maximos y minimos en caso de ser necesario
-  if (lsp > 255) {
-    lsp = 255;
+  if (lsp > maxSpeed) {
+    lsp = maxSpeed;
   }
-  if (lsp < 0) {
-    lsp = 0;
+  if (lsp < minSpeed) {
+    lsp = minSpeed;
   }
-  if (rsp > 255) {
-    rsp = 255;
+  if (rsp > maxSpeed) {
+    rsp = maxSpeed;
   }
-  if (rsp < 0) {
-    rsp = 0;
+  if (rsp < minSpeed) {
+    rsp = minSpeed;
   }
 
   // Asignamos velocidad a los motores
@@ -142,7 +144,6 @@ void linefollow(){
   analogWrite(BIA, rsp);
 
 }
-
 
 //  === Leer Sensor =======================================================================================
 int leer_sensor(int i){
@@ -153,35 +154,4 @@ int leer_sensor(int i){
   return ref;
 }
 
-void imprimir_valores_sensores(){
-    // Imprime minValues[0], threshold[0], maxValues[0] en una línea
-  Serial.print(minValues[0]);
-  Serial.print(" ");
-  Serial.print(threshold[0]);
-  Serial.print(" ");
-  Serial.println(maxValues[0]);
-
-  // Imprime minValues[1], threshold[1], maxValues[1] en una línea
-  Serial.print(minValues[1]);
-  Serial.print(" ");
-  Serial.print(threshold[1]);
-  Serial.print(" ");
-  Serial.println(maxValues[1]);
-
-  // Imprime minValues[2], threshold[2], maxValues[2] en una línea
-  Serial.print(minValues[2]);
-  Serial.print(" ");
-  Serial.print(threshold[2]);
-  Serial.print(" ");
-  Serial.println(maxValues[2]);
-}
-
-
-void parar(){
-  Serial.println("PARAR");
-  analogWrite(AIA, 0);
-  analogWrite(AIB, 0);
-  analogWrite(BIA, 0);
-  analogWrite(BIB, 0);
-}
 
