@@ -9,5 +9,5 @@ Funcionamiento:
   - En base a los valores del PID establece cuanto gira cada motor
 
 Tener en cuenta:
-  - Los sensores miden que tan negro o que tan blanco es la superficie (no son binarios). 
+  - Los sensores miden que tan negro o que tan blanco es la superficie (no son binarios)
   - Cuanto mas blanco mayor el error
